@@ -29,13 +29,14 @@ export default class DexcomPreferences extends ExtensionPreferences {
         window.add(displayPage);
 
         // Add groups to pages
-        this._addAccountGroup(accountPage, settings);
+        this._addDexcomAccountGroup(accountPage, settings);
         this._addThresholdGroup(thresholdPage, settings);
         this._addColorGroup(thresholdPage, settings);
         this._addDisplayOptionsGroup(displayPage, settings);
+        this._addAppearanceGroup(displayPage, settings);
     }
 
-    _addAccountGroup(page, settings) {
+    _addDexcomAccountGroup(page, settings) {
         const group = new Adw.PreferencesGroup({
             title: 'Dexcom Share Account',
             description: 'Enter your Dexcom Share credentials',
@@ -78,42 +79,31 @@ export default class DexcomPreferences extends ExtensionPreferences {
         regionRow.add_suffix(regionCombo);
         group.add(regionRow);
 
-        // Unit selection
-        const unitRow = new Adw.ActionRow({ title: 'Glucose Unit' });
-        const unitCombo = new Gtk.ComboBoxText({
-            valign: Gtk.Align.CENTER,
-        });
-
-        unitCombo.append('mg/dL', 'mg/dL');
-        unitCombo.append('mmol/L', 'mmol/L');
-        
-        unitCombo.set_active_id(settings.get_string('unit'));
-        unitCombo.connect('changed', () => {
-            settings.set_string('unit', unitCombo.get_active_id());
-        });
-
-        unitRow.add_suffix(unitCombo);
-        group.add(unitRow);
-
         // Update interval
         this._addSpinButton(group, settings, 'update-interval',
             'Update Interval (seconds)', 60, 600, 30);
 
         page.add(group);
     }
-
     _addThresholdGroup(page, settings) {
         const group = new Adw.PreferencesGroup({
             title: 'Glucose Thresholds',
             description: 'Set glucose threshold values (mg/dL)',
         });
 
+        // Urgent High Threshold
         this._addSpinButton(group, settings, 'urgent-high-threshold', 
             'Urgent High Threshold', 180, 400, 1);
+
+        // High Threshold
         this._addSpinButton(group, settings, 'high-threshold',
             'High Threshold', 140, 300, 1);
+
+        // Low Threshold
         this._addSpinButton(group, settings, 'low-threshold',
             'Low Threshold', 60, 120, 1);
+
+        // Urgent Low Threshold
         this._addSpinButton(group, settings, 'urgent-low-threshold',
             'Urgent Low Threshold', 40, 80, 1);
 
@@ -144,24 +134,6 @@ export default class DexcomPreferences extends ExtensionPreferences {
         this._addSwitch(group, settings, 'show-delta', 'Show Delta');
         this._addSwitch(group, settings, 'show-trend-arrows', 'Show Trend Arrows');
         this._addSwitch(group, settings, 'show-elapsed-time', 'Show Elapsed Time');
-        this._addSwitch(group, settings, 'show-icon', 'Show Icon');
-
-        // Icon position
-        const iconPosRow = new Adw.ActionRow({ title: 'Icon Position' });
-        const iconPosCombo = new Gtk.ComboBoxText({
-            valign: Gtk.Align.CENTER,
-        });
-
-        iconPosCombo.append('left', 'Left');
-        iconPosCombo.append('right', 'Right');
-        
-        iconPosCombo.set_active_id(settings.get_string('icon-position'));
-        iconPosCombo.connect('changed', () => {
-            settings.set_string('icon-position', iconPosCombo.get_active_id());
-        });
-
-        iconPosRow.add_suffix(iconPosCombo);
-        group.add(iconPosRow);
 
         page.add(group);
     }
@@ -181,6 +153,7 @@ export default class DexcomPreferences extends ExtensionPreferences {
         row.add_suffix(spinButton);
         group.add(row);
 
+        // Add validation
         spinButton.connect('value-changed', () => {
             const value = spinButton.get_value();
             const urgentHigh = settings.get_int('urgent-high-threshold');
@@ -206,10 +179,12 @@ export default class DexcomPreferences extends ExtensionPreferences {
             valign: Gtk.Align.CENTER,
         });
 
+        // Set initial color from settings
         const rgba = new Gdk.RGBA();
         rgba.parse(settings.get_string(key));
         button.set_rgba(rgba);
 
+        // Connect color change signal
         button.connect('color-set', () => {
             const color = button.get_rgba().to_string();
             settings.set_string(key, color);

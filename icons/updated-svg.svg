@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <style>
+    circle, path { fill: #4a90e2 !important; }
+    path.white { fill: white !important; stroke: white; }
+  </style>
+  <circle cx="8" cy="8" r="7.5"/>
+  <path class="white" d="M5 8h6 M8 5v6" stroke-width="1.5"/>
+</svg>

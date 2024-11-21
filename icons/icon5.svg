@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+    <!-- Background circle -->
+    <circle cx="24" cy="24" r="22" 
+            fill="#4A90E2" 
+            style="fill: #4A90E2 !important; stroke: none;"/>
+    
+    <!-- Simple D shape -->
+    <path d="M18 12 h8 a10 10 0 0 1 0 24 h-8 z" 
+          fill="none" 
+          stroke="white" 
+          stroke-width="3"/>
+    
+    <!-- Arrow -->
+    <path d="M24 18 v12 m-4 -4 l4 4 l4 -4" 
+          fill="none" 
+          stroke="white" 
+          stroke-width="3" 
+          stroke-linecap="round" 
+          stroke-linejoin="round"/>
+</svg>

@@ -105,50 +105,18 @@ class DexcomIndicator extends PanelMenu.Button {
     // }
 
 
-    // _connectSignals() {        
-    //     // Settings değişikliklerini dinle
-    //     this._settings.connect('changed::show-icon', () => this._updateDisplay(this._currentReading));
-    //     this._settings.connect('changed::show-trend-arrows', () => this._updateDisplay(this._currentReading));
-    //     this._settings.connect('changed::show-delta', () => this._updateDisplay(this._currentReading));
-    //     this._settings.connect('changed::show-elapsed-time', () => this._updateDisplay(this._currentReading));
-    //     this._settings.connect('changed::username', this._updateCredentials.bind(this));
-    //     this._settings.connect('changed::password', this._updateCredentials.bind(this));
-    //     this._settings.connect('changed::region', this._updateCredentials.bind(this));
-    //     this._settings.connect('changed::unit', this._updateUnit.bind(this)); 
-    // }
     _connectSignals() {        
-        // Settings değişikliklerini hemen uygula
-        this._settings.connect('changed::show-icon', () => {
-            GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
-                this._updateDisplay(this._currentReading);
-                return GLib.SOURCE_REMOVE;
-            });
-        });
-        this._settings.connect('changed::show-trend-arrows', () => {
-            GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
-                this._updateDisplay(this._currentReading);
-                return GLib.SOURCE_REMOVE;
-            });
-        });
-        this._settings.connect('changed::show-delta', () => {
-            GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
-                this._updateDisplay(this._currentReading);
-                return GLib.SOURCE_REMOVE;
-            });
-        });
-        this._settings.connect('changed::show-elapsed-time', () => {
-            GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
-                this._updateDisplay(this._currentReading);
-                return GLib.SOURCE_REMOVE;
-            });
-        });
-        
-        // Diğer bağlantılar
+        // Settings değişikliklerini dinle
+        this._settings.connect('changed::show-icon', () => this._updateDisplay(this._currentReading));
+        this._settings.connect('changed::show-trend-arrows', () => this._updateDisplay(this._currentReading));
+        this._settings.connect('changed::show-delta', () => this._updateDisplay(this._currentReading));
+        this._settings.connect('changed::show-elapsed-time', () => this._updateDisplay(this._currentReading));
         this._settings.connect('changed::username', this._updateCredentials.bind(this));
         this._settings.connect('changed::password', this._updateCredentials.bind(this));
         this._settings.connect('changed::region', this._updateCredentials.bind(this));
         this._settings.connect('changed::unit', this._updateUnit.bind(this)); 
     }
+
 
     _updateCredentials() {
     this._dexcomClient = new DexcomClient(
@@ -189,20 +157,6 @@ class DexcomIndicator extends PanelMenu.Button {
     //     this.menu.addMenuItem(settingsItem);
     // }
 
-    // _addToggleMenuItem(label, settingKey) {
-    //     let toggleItem = new PopupMenu.PopupSwitchMenuItem(
-    //         label, 
-    //         this._settings.get_boolean(settingKey)
-    //     );
-    //     toggleItem.connect('toggled', (item) => {
-    //         this._settings.set_boolean(settingKey, item.state);
-    //         // Use stored reading to update display
-    //         if (this._currentReading) {
-    //             this._updateDisplay(this._currentReading);
-    //         }
-    //     });
-    //     this.menu.addMenuItem(toggleItem);
-    // }
     _addToggleMenuItem(label, settingKey) {
         let toggleItem = new PopupMenu.PopupSwitchMenuItem(
             label, 
@@ -210,16 +164,14 @@ class DexcomIndicator extends PanelMenu.Button {
         );
         toggleItem.connect('toggled', (item) => {
             this._settings.set_boolean(settingKey, item.state);
-            // Hemen güncelle
+            // Use stored reading to update display
             if (this._currentReading) {
-                GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
-                    this._updateDisplay(this._currentReading);
-                    return GLib.SOURCE_REMOVE;
-                });
+                this._updateDisplay(this._currentReading);
             }
         });
         this.menu.addMenuItem(toggleItem);
     }
+    
     _updateUnit() {
         // DexcomClient'ı yeni birimle güncelleyin
         this._dexcomClient = new DexcomClient(
@@ -530,18 +482,14 @@ _getColorForValue(value) {
     
         // KŞ değeri container'ı
         const valueContainer = new St.Bin({
-            style_class: `dexcom-value-container ${this._getBackgroundClass(reading.value)}`,
-            x_align: Clutter.ActorAlign.CENTER,
-            y_align: Clutter.ActorAlign.CENTER
+            style_class: `dexcom-value-container ${this._getBackgroundClass(reading.value)}`
         });
     
         // KŞ değeri
         const valueLabel = new St.Label({
             text: `${reading.value}`,
-            style_class: 'dexcom-value',
-            y_align: Clutter.ActorAlign.CENTER
+            style_class: 'dexcom-value'
         });
-        
         valueContainer.set_child(valueLabel);
         this.box.add_child(valueContainer);
     

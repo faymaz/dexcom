@@ -1,6 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <schemalist>
     <schema id="org.gnome.shell.extensions.dexcom" path="/org/gnome/shell/extensions/dexcom/">
-        <!-- Credentials -->
         <key name="username" type="s">
             <default>""</default>
             <summary>Dexcom Username</summary>
@@ -12,73 +12,45 @@
             <description>Dexcom Share account password</description>
         </key>
         <key name="region" type="s">
-            <default>"OUS"</default>
+            <default>"Non-US"</default>
             <summary>Dexcom Region</summary>
             <description>Dexcom Share server region (US or Non-US)</description>
         </key>
-
-        <!-- Units and Update Settings -->
         <key name="unit" type="s">
             <default>"mg/dL"</default>
             <summary>Glucose Unit</summary>
-            <description>Glucose unit (mg/dL or mmol/L)</description>
-        </key>
-        <key name="update-interval" type="i">
-            <default>60</default>
-            <summary>Update Interval</summary>
-            <description>How often to update the glucose value (in seconds)</description>
-        </key>
-
-        <!-- Thresholds -->
-        <key name="urgent-high-threshold" type="i">
-            <default>240</default>
-            <summary>Urgent High Threshold</summary>
-            <description>Threshold for urgent high glucose warning (in mg/dL)</description>
-        </key>
-        <key name="high-threshold" type="i">
-            <default>180</default>
-            <summary>High Threshold</summary>
-            <description>Threshold for high glucose warning (in mg/dL)</description>
-        </key>
-        <key name="low-threshold" type="i">
-            <default>90</default>
-            <summary>Low Threshold</summary>
-            <description>Threshold for low glucose warning (in mg/dL)</description>
-        </key>
-        <key name="urgent-low-threshold" type="i">
-            <default>70</default>
-            <summary>Urgent Low Threshold</summary>
-            <description>Threshold for urgent low glucose warning (in mg/dL)</description>
-        </key>
-
-        <!-- Display Settings -->
-        <key name="show-delta" type="b">
-            <default>true</default>
-            <summary>Show Delta</summary>
-            <description>Show glucose value change</description>
-        </key>
-        <key name="show-trend-arrows" type="b">
-            <default>true</default>
-            <summary>Show Trend Arrows</summary>
-            <description>Show glucose trend direction arrows</description>
-        </key>
-        <key name="show-elapsed-time" type="b">
-            <default>true</default>
-            <summary>Show Elapsed Time</summary>
-            <description>Show time since last reading</description>
+            <description>Preferred glucose unit (mg/dL or mmol/L)</description>
         </key>
         <key name="show-icon" type="b">
             <default>true</default>
             <summary>Show Icon</summary>
             <description>Show or hide the Dexcom icon in the panel</description>
         </key>
-        <key name="icon-position" type="s">
-            <default>"left"</default>
-            <summary>Icon Position</summary>
-            <description>Position of the icon relative to the text (left or right)</description>
+        <key name="update-interval" type="i">
+            <default>180</default>
+            <summary>Update Interval</summary>
+            <description>How often to update the glucose value (in seconds)</description>
         </key>
-
-        <!-- Colors -->
+        <key name="urgent-high-threshold" type="i">
+            <default>240</default>
+            <summary>Urgent High Glucose Threshold</summary>
+            <description>Threshold for urgent high glucose warning (in mg/dL)</description>
+        </key>
+        <key name="high-threshold" type="i">
+            <default>180</default>
+            <summary>High Glucose Threshold</summary>
+            <description>Threshold for high glucose warning (in mg/dL)</description>
+        </key>
+        <key name="low-threshold" type="i">
+            <default>90</default>
+            <summary>Low Glucose Threshold</summary>
+            <description>Threshold for low glucose warning (in mg/dL)</description>
+        </key>
+        <key name="urgent-low-threshold" type="i">
+            <default>70</default>
+            <summary>Urgent Low Glucose Threshold</summary>
+            <description>Threshold for urgent low glucose warning (in mg/dL)</description>
+        </key>
         <key name="urgent-high-color" type="s">
             <default>"#FF0000"</default>
             <summary>Urgent High Color</summary>
@@ -103,6 +75,26 @@
             <default>"#FF0000"</default>
             <summary>Urgent Low Color</summary>
             <description>Color for urgent low glucose values</description>
+        </key>
+        <key name="show-delta" type="b">
+            <default>true</default>
+            <summary>Show Delta</summary>
+            <description>Show glucose value change</description>
+        </key>
+        <key name="show-trend-arrows" type="b">
+            <default>true</default>
+            <summary>Show Trend Arrows</summary>
+            <description>Show glucose trend direction arrows</description>
+        </key>
+        <key name="show-elapsed-time" type="b">
+            <default>true</default>
+            <summary>Show Elapsed Time</summary>
+            <description>Show time since last reading</description>
+        </key>
+        <key name="icon-position" type="s">
+            <default>"left"</default>
+            <summary>Icon Position</summary>
+            <description>Position of the icon relative to the text (left or right)</description>
         </key>
     </schema>
 </schemalist>

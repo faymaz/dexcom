@@ -1,0 +1,79 @@
+/* Extension styling */
+.dexcom-container {
+    spacing: 3px;
+    padding: 2px 4px;
+    border-radius: 4px;
+    margin: 0 4px;
+}
+
+.dexcom-icon {
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    margin: 0 4px;
+}
+
+.dexcom-value {
+    color: #000000;  /* KŞ değeri her zaman siyah */
+    font-size: 14px;
+    font-weight: bold;
+    padding: 2px 6px;
+    margin: 0 2px;
+    border-radius: 3px;
+    min-width: 45px; /* Sabit genişlik ekledik */
+    text-align: center;
+}
+
+.dexcom-trend {
+    color: #ff0101;
+    font-size: 14px;
+    margin: 0 2px;
+}
+
+.dexcom-delta {
+    color: rgba(248, 115, 6, 0.7);
+    font-size: 12px;
+    margin: 0 2px;
+    min-width: 25px; /* Sabit genişlik */
+    text-align: right;
+}
+
+.dexcom-time {
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 11px;
+    margin: 0 2px;
+    min-width: 30px; /* Sabit genişlik */
+    text-align: right;
+}
+
+/* Background colors */
+.bg-urgent-high {
+    background-color: rgb(252, 185, 0);
+}
+
+.bg-high {
+    background-color: rgb(247, 222, 0);
+}
+
+.bg-normal {
+    background-color: rgb(38, 243, 38);
+}
+
+.bg-low {
+    background-color: rgba(255, 0, 0, 0.2);
+}
+
+.bg-urgent-low {
+    background-color: rgba(255, 0, 0, 0.938);
+}
+
+/* Menu styling */
+.dexcom-menu-item {
+    padding: 4px;
+    spacing: 4px;
+}
+
+.dexcom-settings-button {
+    margin-top: 10px;
+    padding: 8px;
+}

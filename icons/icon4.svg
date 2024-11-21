@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 200 200">
+  <!-- Daire -->
+  <circle cx="100" cy="100" r="85" fill="none" stroke="#00fd00" stroke-width="25"/>
+  <!-- X şekli -->
+  <path d="M50 50 L150 150 M150 50 L50 150" stroke="#00fd00" stroke-width="35" stroke-linecap="round"/>
+</svg>
+

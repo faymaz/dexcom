@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+    <!-- Arka plan daire - sabit mavi renk -->
+    <circle cx="24" cy="24" r="22"
+            fill="#4A90E2"
+            style="fill: #4A90E2 !important;"
+            stroke="none"/>
+
+    <!-- Beyaz D harfi -->
+    <path d="M16 14 h10 a8 8 0 0 1 0 20 h-10z"
+          fill="none"
+          stroke="white"
+          stroke-width="2"/>
+
+    <!-- Trend oku -->
+    <path d="M24 17 v14 m-4 -4 l4 4 l4 -4"
+          fill="none"
+          stroke="white"
+          stroke-width="2"
+          stroke-linecap="round"/>
+</svg>

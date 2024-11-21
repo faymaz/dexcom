@@ -1,0 +1,80 @@
+/* Extension styling */
+.dexcom-urgent-high {
+    color: inherit !important;  /* Renk extension.js'den gelecek */
+    font-weight: bold;
+}
+
+.dexcom-high {
+    color: inherit !important;
+    font-weight: bold;
+}
+
+.dexcom-normal {
+    color: inherit !important;
+    font-weight: bold;
+}
+
+.dexcom-low {
+    color: inherit !important;
+    font-weight: bold;
+}
+
+.dexcom-urgent-low {
+    color: inherit !important;
+    font-weight: bold;
+}
+
+.dexcom-error {
+    color: red;
+    font-style: italic;
+}
+/* Extension styling */
+.dexcom-icon {
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    margin: 0 4px;
+    fill: #000000;
+}
+.dexcom-label {
+    margin-left: 5px;
+    font-size: 15px;
+}
+.dexcom-menu-item {
+    padding: 8px;
+}
+
+.dexcom-settings-button {
+    margin-top: 10px;
+}
+
+.dexcom-trend-arrow {
+    margin-left: 2px;
+    font-size: 14px;
+}
+
+.dexcom-delta {
+    margin-left: 4px;
+    font-size: 12px;
+}
+
+.dexcom-elapsed-time {
+    margin-left: 4px;
+    font-size: 11px;
+    color: #888888;
+}
+/* Preferences window styling */
+.dexcom-preferences-group {
+    margin: 12px;
+}
+
+.dexcom-threshold-row {
+    padding: 8px;
+    border-bottom: 1px solid rgba(128, 128, 128, 0.2);
+}
+
+.dexcom-color-button {
+    min-width: 60px;
+    min-height: 24px;
+    border-radius: 4px;
+}

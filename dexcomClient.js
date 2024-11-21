@@ -170,16 +170,28 @@ export class DexcomClient {
             'RateOutOfRange': '⚠️'
         };
 
-        const value = this._unit === 'mmol/L' ? 
-            (reading.Value / 18.0).toFixed(1) : 
-            reading.Value.toString();
+        let value = reading.Value;
+        if (this._unit === 'mmol/L') {
+            value = (reading.Value / 18.0).toFixed(1);
+        }
 
+        let delta = 0;
+        if (this._previousReading) {
+            const prevValue = this._unit === 'mmol/L' ? 
+                (this._previousReading.Value / 18.0) : 
+                this._previousReading.Value;
+                
+            delta = value - prevValue;
+        }
+        this._previousReading = reading;
+    
         return {
             value: value,
             unit: this._unit,
             trend: reading.Trend,
             trendArrow: TREND_ARROWS[reading.Trend] || '?',
-            timestamp: new Date(parseInt(reading.WT.match(/\d+/)[0]))
+            timestamp: new Date(parseInt(reading.WT.match(/\d+/)[0])),
+            delta: delta.toFixed(1)
         };
     }
 }

@@ -1,0 +1,70 @@
+/* Extension styling */
+.dexcom-container {
+    spacing: 4px;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.dexcom-icon {
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    margin: 0 4px;
+}
+
+.dexcom-label {
+    margin: 0 2px;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.dexcom-value {
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-weight: bold;
+}
+
+.dexcom-delta {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 12px;
+    padding: 2px 4px;
+}
+
+.dexcom-trend {
+    font-size: 14px;
+    padding: 2px;
+    margin: 0 2px;
+}
+
+.dexcom-time {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 11px;
+    font-style: italic;
+    padding: 2px;
+}
+
+/* Background colors */
+.bg-urgent-high {
+    background-color: rgba(255, 0, 0, 0.3);
+    color: rgb(255, 255, 255);
+}
+
+.bg-high {
+    background-color: rgba(255, 165, 0, 0.3);
+    color: rgb(255, 255, 255);
+}
+
+.bg-normal {
+    background-color: rgba(0, 255, 0, 0.2);
+    color: rgb(255, 255, 255);
+}
+
+.bg-low {
+    background-color: rgba(255, 165, 0, 0.3);
+    color: rgb(255, 255, 255);
+}
+
+.bg-urgent-low {
+    background-color: rgba(255, 0, 0, 0.3);
+    color: rgb(255, 255, 255);
+}

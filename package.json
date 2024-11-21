@@ -1,0 +1,26 @@
+{
+  "name": "dexcom-gnome-extension",
+  "version": "3.0.0",
+  "private": true,
+  "dependencies": {
+    "@faymaz/jsdexcom": "^2.0.0",
+    "node-fetch": "^2.6.1"
+  },
+  "description": "![Visitor Count](https://visitor-badge.laobi.icu/badge?page_id=faymaz.dexcom) > ⚠️ **WARNING:** This Dexcom Gnome Shell extension project is currently in development and is not yet operational.",
+  "main": "extension copy.js",
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/faymaz/dexcom.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/faymaz/dexcom/issues"
+  },
+  "homepage": "https://github.com/faymaz/dexcom#readme"
+}
