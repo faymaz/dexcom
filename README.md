@@ -30,20 +30,16 @@ A GNOME Shell extension that seamlessly integrates with Dexcom Share to display 
 
 ![Dexcom Gnome Shell - 2](img/Dexcom_1.png)
 
+## ⚙️ Configuration Screenshots
+
 ![Dexcom Gnome Shell - 3](img/Dexcom_2.png)
 
 ![Dexcom Gnome Shell - 4](img/Dexcom_3.png)
 
-## ⚙️ Configuration Screenshots
-
-![Dexcom - Configuration Menu](img/Dexcom_config_menu_1.png)
-![Dexcom - Configuration Menu](img/Dexcom_config_menu_2.png)
-![Dexcom - Configuration Menu](img/Dexcom_config_menu_3.png)
-
 ## 🚀 Installation
 
 ### 🌐 From GNOME Extensions Website
-1. Visit [GNOME Extensions](https://extensions.gnome.org)
+1. Visit [GNOME Extensions](https://extensions.gnome.org) / [Dexcom Blood Glucose Monitor GNOME Extension] (https://extensions.gnome.org/extension/7657/dexcom-cgm-monitor/)
 2. Search for "Dexcom Blood Glucose Monitor"
 3. Click "Install"
 
@@ -97,7 +93,7 @@ A GNOME Shell extension that seamlessly integrates with Dexcom Share to display 
 
 ## 💻 Compatibility
 
-- GNOME Shell 45, 46, and 47
+- GNOME Shell 45, 46, 47 and 48
 - Requires active Dexcom Share account with sharing enabled
 - Works with both US and Non-US Dexcom servers
 - Internet connection required
