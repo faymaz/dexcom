@@ -30,11 +30,15 @@ A GNOME Shell extension that seamlessly integrates with Dexcom Share to display 
 
 ![Dexcom Gnome Shell - 2](img/Dexcom_1.png)
 
-## ⚙️ Configuration Screenshots
-
 ![Dexcom Gnome Shell - 3](img/Dexcom_2.png)
 
 ![Dexcom Gnome Shell - 4](img/Dexcom_3.png)
+
+## ⚙️ Configuration Screenshots
+
+![Dexcom - Configuration Menu](img/Dexcom_config_menu_1.png)
+![Dexcom - Configuration Menu](img/Dexcom_config_menu_2.png)
+![Dexcom - Configuration Menu](img/Dexcom_config_menu_3.png)
 
 ## 🚀 Installation
 
