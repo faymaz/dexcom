@@ -15,8 +15,18 @@ class DexcomIndicator extends PanelMenu.Button {
     _init(settings) {
         super._init(0.0, 'Dexcom Indicator');
         this._settings = settings;
-        
+
         this.path = null;
+
+        this._log = (message, data = null) => {
+            if (this._settings.get_boolean('enable-debug-logs')) {
+                if (data) {
+                    console.log(`[Dexcom] ${message}`, data);
+                } else {
+                    console.log(`[Dexcom] ${message}`);
+                }
+            }
+        };
 
        
         this.box = new St.BoxLayout({
@@ -39,7 +49,8 @@ class DexcomIndicator extends PanelMenu.Button {
             this._settings.get_string('username'),
             this._settings.get_string('password'),
             this._settings.get_string('region'),
-            this._settings.get_string('unit')
+            this._settings.get_string('unit'),
+            this._settings
         );
 
        
@@ -84,8 +95,8 @@ class DexcomIndicator extends PanelMenu.Button {
         try {
             this._loadIcon();
         } catch (error) {
-            console.log('Error initializing icon:', error);
-           
+            this._log('Error initializing icon:', error);
+
             this.icon = new St.Icon({
                 icon_name: 'utilities-system-monitor-symbolic',
                 style_class: 'system-status-icon',
@@ -143,7 +154,7 @@ class DexcomIndicator extends PanelMenu.Button {
         const unit = this._settings.get_string('unit');
     
         if (!username || !password) {
-            console.warn('Username or password not set');
+            this._log('Username or password not set');
             this._updateDisplayError('Auth Error', 'Please enter your Dexcom Share credentials');
             return;
         }
@@ -176,7 +187,8 @@ class DexcomIndicator extends PanelMenu.Button {
             this._settings.get_string('username'),
             this._settings.get_string('password'),
             this._settings.get_string('region'),
-            this._settings.get_string('unit')
+            this._settings.get_string('unit'),
+            this._settings
         );
     
 
@@ -242,8 +254,8 @@ class DexcomIndicator extends PanelMenu.Button {
             this._updateDisplay(reading);
             this._updateMenuInfo(reading);
         } catch (error) {
-            console.log('Error fetching Dexcom reading:', error);
-    
+            this._log('Error fetching Dexcom reading:', error);
+
             let errorMessage = 'Error';
             let detailedMessage = error.message;
     
@@ -581,8 +593,8 @@ _updateDisplay(reading) {
             return `rgba(${r}, ${g}, ${b}, ${alpha})`;
         };
     
-       
-        console.log('Color threshold check:', {
+
+        this._log('Color threshold check:', {
             unit: isMmol ? 'mmol/L' : 'mg/dL',
             value: numericValue,
             thresholds: thresholds

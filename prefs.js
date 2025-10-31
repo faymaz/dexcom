@@ -24,15 +24,22 @@ export default class DexcomPreferences extends ExtensionPreferences {
             icon_name: 'preferences-desktop-display-symbolic',
         });
 
+        const advancedPage = new Adw.PreferencesPage({
+            title: 'Advanced',
+            icon_name: 'applications-engineering-symbolic',
+        });
+
         window.add(accountPage);
         window.add(thresholdPage);
         window.add(displayPage);
+        window.add(advancedPage);
 
-       
+
         this._addAccountGroup(accountPage, settings);
         this._addThresholdGroup(thresholdPage, settings);
         this._addColorGroup(thresholdPage, settings);
         this._addDisplayOptionsGroup(displayPage, settings);
+        this._addAdvancedOptionsGroup(advancedPage, settings);
     }
 
     _addAccountGroup(page, settings) {
@@ -332,5 +339,16 @@ export default class DexcomPreferences extends ExtensionPreferences {
         settings.bind(key, toggle, 'active', Gio.SettingsBindFlags.DEFAULT);
         row.add_suffix(toggle);
         group.add(row);
+    }
+
+    _addAdvancedOptionsGroup(page, settings) {
+        const group = new Adw.PreferencesGroup({
+            title: 'Developer Options',
+            description: 'Advanced settings for troubleshooting',
+        });
+
+        this._addSwitch(group, settings, 'enable-debug-logs', 'Enable Debug Logs');
+
+        page.add(group);
     }
 }

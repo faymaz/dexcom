@@ -5,11 +5,21 @@ import Soup from 'gi://Soup';
 import Gio from 'gi://Gio';
 
 export class DexcomClient {
-    constructor(username, password, region = 'ous', unit = 'mg/dL') {
+    constructor(username, password, region = 'ous', unit = 'mg/dL', settings = null) {
         this._username = username;
         this._password = password;
-        
-       
+        this._settings = settings;
+
+        this._log = (message, data = null) => {
+            if (this._settings && this._settings.get_boolean('enable-debug-logs')) {
+                if (data) {
+                    console.log(`[DexcomClient] ${message}`, data);
+                } else {
+                    console.log(`[DexcomClient] ${message}`);
+                }
+            }
+        };
+
         region = region.toLowerCase().trim();
         
        
@@ -42,8 +52,8 @@ export class DexcomClient {
         this._session = new Soup.Session();
         this._session.timeout = 30;
         
-       
-        console.log('DexcomClient initialized:', {
+
+        this._log('DexcomClient initialized:', {
             region: this._region,
             baseUrl: this._baseUrl,
             unit: this._unit
@@ -90,9 +100,9 @@ export class DexcomClient {
                 const jsonStr = JSON.stringify(data);
                 const bytes = new TextEncoder().encode(jsonStr);
                 message.set_request_body_from_bytes('application/json', new GLib.Bytes(bytes));
-                console.log(`Request body: ${jsonStr}`);
+                this._log(`Request body: ${jsonStr}`);
             } else {
-                console.log('GET request - no body required');
+                this._log('GET request - no body required');
             }
 
             const response = await this._session.send_and_read_async(message, 
@@ -113,15 +123,15 @@ export class DexcomClient {
             throw new Error(`Request failed with status ${status}: ${responseText}`);
 
         } catch (error) {
-            console.error('Request failed:', error);
+            this._log('Request failed:', error);
             throw error;
         }
     }
 
-   
+
     _logDebugInfo(stage, data) {
         const timestamp = new Date().toISOString();
-        console.log(`[DEBUG ${timestamp}] ${stage}:`, JSON.stringify(data, null, 2));
+        this._log(`[DEBUG ${timestamp}] ${stage}:`, JSON.stringify(data, null, 2));
     }
     
 
@@ -132,10 +142,10 @@ async authenticate() {
             throw new Error('Username and password are required');
         }
 
-        console.log('Starting authentication for region:', this._region);
-        console.log('Using base URL:', this._baseUrl);
+        this._log('Starting authentication for region:', this._region);
+        this._log('Using base URL:', this._baseUrl);
 
-       
+
         const authUrl = `${this._baseUrl}/ShareWebServices/Services/General/AuthenticatePublisherAccount`;
         const authPayload = {
             accountName: this._username,
@@ -143,15 +153,15 @@ async authenticate() {
             applicationId: this._applicationId
         };
 
-        console.log('Attempting initial authentication...');
+        this._log('Attempting initial authentication...');
         this._accountId = await this._makeRequest(authUrl, 'POST', authPayload);
 
-       
+
         if (!this._accountId || typeof this._accountId !== 'string') {
             throw new Error('Invalid account ID received');
         }
 
-        console.log('Account ID received:', this._accountId);
+        this._log('Account ID received:', this._accountId);
 
        
         const loginUrl = `${this._baseUrl}/ShareWebServices/Services/General/LoginPublisherAccountById`;
@@ -168,13 +178,13 @@ async authenticate() {
             throw new Error('Invalid session ID received');
         }
 
-        console.log('Authentication successful, session ID received');
+        this._log('Authentication successful, session ID received');
         return this._sessionId;
 
     } catch (error) {
-        console.error('Authentication error:', error.message);
+        this._log('Authentication error:', error.message);
         if (error.message.includes('500')) {
-            console.error('Server error details:', error);
+            this._log('Server error details:', error);
         }
        
         this._sessionId = null;
@@ -187,37 +197,37 @@ async authenticate() {
     async getLatestGlucose() {
         try {
             if (!this._sessionId) {
-                console.log('[DEBUG] No session ID, authenticating...');
+                this._log('[DEBUG] No session ID, authenticating...');
                 await this.authenticate();
             }
-    
+
             const url = `${this._baseUrl}/ShareWebServices/Services/Publisher/ReadPublisherLatestGlucoseValues`;
             const params = {
                 sessionId: this._sessionId,
                 minutes: 1440,
                 maxCount: 1
             };
-    
-            console.log('[DEBUG] Fetching glucose readings from:', url);
-            console.log('[DEBUG] Using params:', JSON.stringify(params));
-            
+
+            this._log('[DEBUG] Fetching glucose readings from:', url);
+            this._log('[DEBUG] Using params:', JSON.stringify(params));
+
             const readings = await this._makeRequest(url, 'GET', null, params);
-            console.log('[DEBUG] Raw API response:', JSON.stringify(readings));
-            
+            this._log('[DEBUG] Raw API response:', JSON.stringify(readings));
+
             if (!Array.isArray(readings) || readings.length === 0) {
-                console.log('[DEBUG] No readings available in response');
+                this._log('[DEBUG] No readings available in response');
                 throw new Error('No readings available');
             }
-    
-            console.log('[DEBUG] Processing reading:', JSON.stringify(readings[0]));
+
+            this._log('[DEBUG] Processing reading:', JSON.stringify(readings[0]));
             const reading = this._formatReading(readings[0]);
             return reading;
-    
+
         } catch (error) {
-            console.log('[DEBUG] Error in getLatestGlucose:', error.message);
-            
+            this._log('[DEBUG] Error in getLatestGlucose:', error.message);
+
             if (error.message.includes('SessionIdNotFound')) {
-                console.log('[DEBUG] Session expired, re-authenticating...');
+                this._log('[DEBUG] Session expired, re-authenticating...');
                 this._sessionId = null;
                 return this.getLatestGlucose();
             }
@@ -256,12 +266,12 @@ async authenticate() {
             }
         }
     
-       
+
         if (delta === 0 && this._previousDelta) {
-           
+
             if (Math.abs(this._previousDelta) <= 2.0) {
                 delta = this._previousDelta;
-                console.log('[DEBUG] Preserving previous delta:', delta);
+                this._log('[DEBUG] Preserving previous delta:', delta);
             }
         }
     
@@ -288,7 +298,7 @@ async authenticate() {
        
         this._previousDelta = delta;
     
-       
+
         const formattedReading = {
             value: value,
             unit: this._unit,
@@ -296,21 +306,21 @@ async authenticate() {
             timestamp: new Date(currentTimestamp),
             delta: Number(delta).toFixed(1)
         };
-    
-        console.log('[DEBUG] Formatted reading:', formattedReading);
+
+        this._log('[DEBUG] Formatted reading:', formattedReading);
         return formattedReading;
     }
    
     _normalizeTrend(trend, delta = null) {
-        console.log('[DEBUG] _normalizeTrend input:', trend, 'delta:', delta);
-        
-       
+        this._log('[DEBUG] _normalizeTrend input:', trend, 'delta:', delta);
+
+
         const normalizedInput = String(trend || '')
             .toUpperCase()
             .replace(/\s+/g, '')
             .replace(/-/g, '');
-    
-        console.log('[DEBUG] Normalized trend input:', normalizedInput);
+
+        this._log('[DEBUG] Normalized trend input:', normalizedInput);
     
        
         const trendMap = {
@@ -326,36 +336,36 @@ async authenticate() {
             'RATEOUTOFRANGE': 'RATE_OUT_OF_RANGE'
         };
     
-       
+
         let mappedTrend = trendMap[normalizedInput] || 'FLAT';
-        console.log('[DEBUG] Initial mapped trend:', mappedTrend);
-    
-       
+        this._log('[DEBUG] Initial mapped trend:', mappedTrend);
+
+
         if (delta !== null) {
             const originalTrend = mappedTrend;
-            
+
             if (delta < -3.0 && (mappedTrend === 'FLAT' || mappedTrend === 'FORTY_FIVE_UP' || mappedTrend === 'SINGLE_UP')) {
                 mappedTrend = 'SINGLE_DOWN';
-                console.log('[DEBUG] Trend corrected: Large negative delta -> SINGLE_DOWN');
+                this._log('[DEBUG] Trend corrected: Large negative delta -> SINGLE_DOWN');
             } else if (delta < -1.0 && mappedTrend === 'FLAT') {
                 mappedTrend = 'FORTY_FIVE_DOWN';
-                console.log('[DEBUG] Trend corrected: Small negative delta -> FORTY_FIVE_DOWN');
+                this._log('[DEBUG] Trend corrected: Small negative delta -> FORTY_FIVE_DOWN');
             } else if (delta > 1.0 && delta < 3.0 && mappedTrend === 'FLAT') {
                 mappedTrend = 'FORTY_FIVE_UP';
-                console.log('[DEBUG] Trend corrected: Small positive delta -> FORTY_FIVE_UP');
+                this._log('[DEBUG] Trend corrected: Small positive delta -> FORTY_FIVE_UP');
             } else if (delta > 3.0 && (mappedTrend === 'FLAT' || mappedTrend === 'FORTY_FIVE_DOWN' || mappedTrend === 'SINGLE_DOWN')) {
                 mappedTrend = 'SINGLE_UP';
-                console.log('[DEBUG] Trend corrected: Large positive delta -> SINGLE_UP');
+                this._log('[DEBUG] Trend corrected: Large positive delta -> SINGLE_UP');
             }
-            
+
             if (originalTrend !== mappedTrend) {
-                console.log('[DEBUG] Trend correction applied:', originalTrend, '->', mappedTrend);
+                this._log('[DEBUG] Trend correction applied:', originalTrend, '->', mappedTrend);
             } else {
-                console.log('[DEBUG] No trend correction needed');
+                this._log('[DEBUG] No trend correction needed');
             }
         }
-    
-        console.log('[DEBUG] Final normalized trend:', mappedTrend);
+
+        this._log('[DEBUG] Final normalized trend:', mappedTrend);
         return mappedTrend;
     }
 }

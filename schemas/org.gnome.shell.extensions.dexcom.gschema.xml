@@ -78,6 +78,13 @@
             <description>Position of the icon relative to the text (left or right)</description>
         </key>
 
+        <!-- Debug Settings -->
+        <key name="enable-debug-logs" type="b">
+            <default>false</default>
+            <summary>Enable Debug Logs</summary>
+            <description>Enable debug logging for troubleshooting</description>
+        </key>
+
         <!-- Colors -->
         <key name="urgent-high-color" type="s">
             <default>"#FF0000"</default>
