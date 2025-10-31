@@ -15,6 +15,7 @@ class DexcomIndicator extends PanelMenu.Button {
     _init(settings) {
         super._init(0.0, 'Dexcom Indicator');
         this._settings = settings;
+        this._destroyed = false;
 
         this.path = null;
 
@@ -232,17 +233,26 @@ class DexcomIndicator extends PanelMenu.Button {
         }, this._settings.get_int('update-interval') * 1000);
     }
 
-   
+
     async _updateReading() {
-       
+        // Check if widget is destroyed before starting
+        if (this._destroyed) {
+            return;
+        }
+
         if (!this._dexcomClient) {
             this._updateDisplayError('Setup Required', 'Please configure your Dexcom Share credentials');
             return;
         }
-    
+
         try {
-           
+
             const reading = await this._dexcomClient.getLatestGlucose();
+
+            // Check again after async operation
+            if (this._destroyed) {
+                return;
+            }
             
            
             if (!reading) {
@@ -287,11 +297,16 @@ class DexcomIndicator extends PanelMenu.Button {
         }
     }
 
-   
+
     _updateDisplayError(errorMessage, detailedMessage) {
+        // Check if widget is destroyed
+        if (this._destroyed || !this.buttonText) {
+            return;
+        }
+
         this.buttonText.text = errorMessage;
         this.buttonText.style_class = 'dexcom-label dexcom-error';
-        if (this.glucoseInfo) {
+        if (this.glucoseInfo && this.glucoseInfo.label) {
             this.glucoseInfo.label.text = detailedMessage;
         }
     }
@@ -335,10 +350,13 @@ class DexcomIndicator extends PanelMenu.Button {
     }
 
     _updateIconVisibility() {
-       
+        // Check if widget is destroyed
+        if (this._destroyed || !this.box) {
+            return;
+        }
+
         this.box.remove_all_children();
-        
-       
+
         this.box.style_class = '';
         this.box.set_style('spacing: 2px; padding: 0px 1px;');
     
@@ -418,14 +436,16 @@ _addAdditionalElements(reading, style) {
 }
 
 _updateDisplay(reading) {
-   
+    // Check if widget is destroyed
+    if (this._destroyed || !this.box) {
+        return;
+    }
+
     this.box.remove_all_children();
-    
-   
+
     this.box.style_class = '';
     this.box.set_style('');
-    
-   
+
     this.box.set_style('spacing: 2px; padding: 0px 1px;');
 
    
@@ -628,8 +648,13 @@ _updateDisplay(reading) {
         return { styleClass, style };
     }
 
-   
+
     _updateMenuInfo(reading) {
+        // Check if widget is destroyed
+        if (this._destroyed || !this.glucoseInfo || !this.glucoseInfo.label) {
+            return;
+        }
+
         if (!reading) {
             this.glucoseInfo.label.text = 'No data available';
             return;
@@ -687,9 +712,21 @@ _updateDisplay(reading) {
     }
 
     destroy() {
+        // Set destroyed flag to prevent async operations
+        this._destroyed = true;
+
+        // Clear timeout
         if (this._timeout) {
             clearInterval(this._timeout);
+            this._timeout = null;
         }
+
+        // Clean up client
+        if (this._dexcomClient) {
+            this._dexcomClient = null;
+        }
+
+        // Call parent destroy
         super.destroy();
     }
 });
