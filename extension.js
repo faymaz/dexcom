@@ -235,7 +235,7 @@ class DexcomIndicator extends PanelMenu.Button {
 
 
     async _updateReading() {
-        // Check if widget is destroyed before starting
+      
         if (this._destroyed) {
             return;
         }
@@ -249,7 +249,7 @@ class DexcomIndicator extends PanelMenu.Button {
 
             const reading = await this._dexcomClient.getLatestGlucose();
 
-            // Check again after async operation
+          
             if (this._destroyed) {
                 return;
             }
@@ -299,7 +299,7 @@ class DexcomIndicator extends PanelMenu.Button {
 
 
     _updateDisplayError(errorMessage, detailedMessage) {
-        // Check if widget is destroyed
+      
         if (this._destroyed || !this.buttonText) {
             return;
         }
@@ -350,7 +350,7 @@ class DexcomIndicator extends PanelMenu.Button {
     }
 
     _updateIconVisibility() {
-        // Check if widget is destroyed
+      
         if (this._destroyed || !this.box) {
             return;
         }
@@ -436,7 +436,7 @@ _addAdditionalElements(reading, style) {
 }
 
 _updateDisplay(reading) {
-    // Check if widget is destroyed
+  
     if (this._destroyed || !this.box) {
         return;
     }
@@ -650,7 +650,7 @@ _updateDisplay(reading) {
 
 
     _updateMenuInfo(reading) {
-        // Check if widget is destroyed
+      
         if (this._destroyed || !this.glucoseInfo || !this.glucoseInfo.label) {
             return;
         }
@@ -712,21 +712,21 @@ _updateDisplay(reading) {
     }
 
     destroy() {
-        // Set destroyed flag to prevent async operations
+      
         this._destroyed = true;
 
-        // Clear timeout
+      
         if (this._timeout) {
             clearInterval(this._timeout);
             this._timeout = null;
         }
 
-        // Clean up client
+      
         if (this._dexcomClient) {
             this._dexcomClient = null;
         }
 
-        // Call parent destroy
+      
         super.destroy();
     }
 });
