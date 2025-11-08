@@ -268,13 +268,16 @@ class DexcomIndicator extends PanelMenu.Button {
 
             let errorMessage = 'Error';
             let detailedMessage = error.message;
-    
-           
-            if (error.message.includes('AccountPasswordInvalid')) {
+
+
+            if (error.message.includes('423')) {
+                errorMessage = 'API Locked';
+                detailedMessage = 'Dexcom API temporarily locked. This usually resolves automatically. Try refreshing or wait a few minutes.';
+            } else if (error.message.includes('AccountPasswordInvalid')) {
                 errorMessage = 'Auth Error';
                 detailedMessage = 'Invalid username or password';
-                
-               
+
+
                 this._dexcomClient = null;
                 await this._updateCredentials();
             } else if (error.message.includes('AccountNotFound')) {
@@ -284,30 +287,59 @@ class DexcomIndicator extends PanelMenu.Button {
                 errorMessage = 'Auth Error';
                 detailedMessage = 'Invalid password';
             } else if (error.message.includes('Session')) {
-               
+
                 await this._updateReading();
                 return;
             } else if (error.message.includes('network') || error.message.includes('timeout')) {
                 errorMessage = 'Network Error';
                 detailedMessage = 'Please check your internet connection';
             }
-    
-           
+
+
             this._updateDisplayError(errorMessage, detailedMessage);
         }
     }
 
 
     _updateDisplayError(errorMessage, detailedMessage) {
-      
-        if (this._destroyed || !this.buttonText) {
+
+        if (this._destroyed || !this.box) {
             return;
         }
 
-        this.buttonText.text = errorMessage;
-        this.buttonText.style_class = 'dexcom-label dexcom-error';
+        // Clear the current reading to prevent showing stale data
+        this._currentReading = null;
+
+        // Clear the display
+        this.box.remove_all_children();
+        this.box.style_class = '';
+        this.box.set_style('spacing: 2px; padding: 0px 1px;');
+
+        // Show icon if enabled
+        if (this._settings.get_boolean('show-icon') && this.icon) {
+            this.box.add_child(this.icon);
+        }
+
+        // Create error container with red styling
+        const errorContainer = new St.Bin({
+            style_class: 'dexcom-value-container',
+            style: 'color: #ff0000; border-color: rgba(255, 0, 0, 0.6);',
+            x_align: Clutter.ActorAlign.CENTER,
+            y_align: Clutter.ActorAlign.CENTER
+        });
+
+        const errorLabel = new St.Label({
+            text: errorMessage,
+            y_align: Clutter.ActorAlign.CENTER,
+            style_class: 'dexcom-error'
+        });
+
+        errorContainer.set_child(errorLabel);
+        this.box.add_child(errorContainer);
+
+        // Update menu with detailed error message
         if (this.glucoseInfo && this.glucoseInfo.label) {
-            this.glucoseInfo.label.text = detailedMessage;
+            this.glucoseInfo.label.text = `Error: ${detailedMessage}`;
         }
     }
 

@@ -4,7 +4,9 @@
     "status-indicators"
   ],
   "description": "A GNOME Shell extension that seamlessly integrates with Dexcom Share to display real-time blood glucose levels in the top panel. Features customizable urgent high/low thresholds, color schemes, and comprehensive glucose monitoring options.\n\nThis extension is not affiliated, funded, or in any way associated with Dexcom.",
-  "donation-url": "https://buymeacoffee.com/faymaz",
+  "donations": {
+    "buymeacoffee": "fethiaymazb"
+  },
   "gettext-domain": "dexcom-monitor",
   "icon": "icons/dexcom-icon.svg",
   "name": "Dexcom Blood Glucose Monitor",
@@ -18,5 +20,5 @@
   ],
   "url": "https://github.com/faymaz/dexcom",
   "uuid": "dexcom@faymaz.github.com",
-  "version": 14
+  "version": 15
 }
