@@ -74,20 +74,33 @@ export class DexcomClient {
             .join('&');
     }
 
-   
+
     async _makeRequest(url, method = 'GET', data = null, params = null) {
         try {
             if (params) {
                 const queryString = Object.entries(params)
-                    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+                    .map(([key, value]) => `${encodeURIComponent(String(key))}=${encodeURIComponent(String(value))}`)
                     .join('&');
                 url = `${url}?${queryString}`;
             }
 
-            const message = new Soup.Message({
-                method,
-                uri: GLib.Uri.parse(url, GLib.UriFlags.NONE)
-            });
+            this._log('Request URL:', url);
+
+            let message;
+            try {
+               
+                const urlString = String(url);
+                this._log('Parsing URL (type: ' + typeof urlString + '):', urlString);
+                const uri = GLib.Uri.parse(urlString, GLib.UriFlags.PARSE_RELAXED);
+                message = new Soup.Message({
+                    method: String(method),
+                    uri: uri
+                });
+            } catch (e) {
+               
+                this._log('GLib.Uri.parse failed, trying alternative method:', e.message);
+                message = Soup.Message.new(method, url);
+            }
 
            
             const headers = message.get_request_headers();
@@ -204,8 +217,8 @@ async authenticate() {
             const url = `${this._baseUrl}/ShareWebServices/Services/Publisher/ReadPublisherLatestGlucoseValues`;
             const params = {
                 sessionId: this._sessionId,
-                minutes: 1440,
-                maxCount: 1
+                minutes: '1440',
+                maxCount: '1'
             };
 
             this._log('[DEBUG] Fetching glucose readings from:', url);
@@ -230,6 +243,66 @@ async authenticate() {
                 this._log('[DEBUG] Session expired, re-authenticating...');
                 this._sessionId = null;
                 return this.getLatestGlucose();
+            }
+            throw error;
+        }
+    }
+
+    async getHistoricalGlucose(minutes = 1440, maxCount = 288) {
+        try {
+            if (!this._sessionId) {
+                this._log('[DEBUG] No session ID, authenticating...');
+                await this.authenticate();
+            }
+
+            const url = `${this._baseUrl}/ShareWebServices/Services/Publisher/ReadPublisherLatestGlucoseValues`;
+            const params = {
+                sessionId: this._sessionId,
+                minutes: String(minutes),
+                maxCount: String(maxCount)
+            };
+
+            this._log('[DEBUG] Fetching historical glucose readings from:', url);
+            this._log('[DEBUG] Using params:', JSON.stringify(params));
+
+            const readings = await this._makeRequest(url, 'GET', null, params);
+            this._log('[DEBUG] Raw API response - count:', readings ? readings.length : 0);
+
+            if (!Array.isArray(readings) || readings.length === 0) {
+                this._log('[DEBUG] No historical readings available in response');
+                return [];
+            }
+
+           
+            const formattedReadings = readings.map(reading => {
+                const timestamp = parseInt(reading.WT.match(/\d+/)[0]);
+                let value = reading.Value;
+                if (this._unit === 'mmol/L') {
+                    value = (reading.Value / 18.0).toFixed(1);
+                }
+
+                return {
+                    value: value,
+                    unit: this._unit,
+                    trend: reading.Trend,
+                    timestamp: new Date(timestamp),
+                    rawValue: reading.Value
+                };
+            });
+
+           
+            formattedReadings.sort((a, b) => a.timestamp - b.timestamp);
+
+            this._log('[DEBUG] Processed historical readings:', formattedReadings.length);
+            return formattedReadings;
+
+        } catch (error) {
+            this._log('[DEBUG] Error in getHistoricalGlucose:', error.message);
+
+            if (error.message.includes('SessionIdNotFound')) {
+                this._log('[DEBUG] Session expired, re-authenticating...');
+                this._sessionId = null;
+                return this.getHistoricalGlucose(minutes, maxCount);
             }
             throw error;
         }

@@ -9,6 +9,7 @@ import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 import { DexcomClient } from './dexcomClient.js';
+import { SimpleGraphDialog } from './simpleGraphDialog.js';
 
 const DexcomIndicator = GObject.registerClass(
 class DexcomIndicator extends PanelMenu.Button {
@@ -307,20 +308,20 @@ class DexcomIndicator extends PanelMenu.Button {
             return;
         }
 
-        // Clear the current reading to prevent showing stale data
+       
         this._currentReading = null;
 
-        // Clear the display
+       
         this.box.remove_all_children();
         this.box.style_class = '';
         this.box.set_style('spacing: 2px; padding: 0px 1px;');
 
-        // Show icon if enabled
+       
         if (this._settings.get_boolean('show-icon') && this.icon) {
             this.box.add_child(this.icon);
         }
 
-        // Create error container with red styling
+       
         const errorContainer = new St.Bin({
             style_class: 'dexcom-value-container',
             style: 'color: #ff0000; border-color: rgba(255, 0, 0, 0.6);',
@@ -337,7 +338,7 @@ class DexcomIndicator extends PanelMenu.Button {
         errorContainer.set_child(errorLabel);
         this.box.add_child(errorContainer);
 
-        // Update menu with detailed error message
+       
         if (this.glucoseInfo && this.glucoseInfo.label) {
             this.glucoseInfo.label.text = `Error: ${detailedMessage}`;
         }
@@ -573,25 +574,37 @@ _updateDisplay(reading) {
         this._addToggleMenuItem('Show Elapsed Time', 'show-elapsed-time');
         this._addToggleMenuItem('Show Icon', 'show-icon');
     
-       
+
         this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
-    
-       
+
+
+        const graphButton = new PopupMenu.PopupMenuItem('View Glucose Graph', {
+            style_class: 'dexcom-graph-button'
+        });
+        graphButton.connect('activate', () => {
+            this._showGraph();
+        });
+        this.menu.addMenuItem(graphButton);
+
+
+        this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+
+
         const refreshButton = new PopupMenu.PopupMenuItem('Refresh Now', {
             style_class: 'dexcom-refresh-button'
         });
         refreshButton.connect('activate', () => {
-           
+
             this.glucoseInfo.label.text = 'Refreshing...';
-           
+
             this._updateReading();
         });
         this.menu.addMenuItem(refreshButton);
-    
-       
+
+
         this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
-    
-       
+
+
         const settingsButton = new PopupMenu.PopupMenuItem('Open Settings', {
             style_class: 'dexcom-settings-button'
         });
@@ -741,6 +754,47 @@ _updateDisplay(reading) {
             'RATE_OUT_OF_RANGE': '?'
         };
         return arrows[trend] || '-';
+    }
+
+    async _showGraph() {
+        try {
+            this._log('Opening graph dialog...');
+            console.log('[Dexcom] Opening graph dialog...');
+
+           
+            this.menu.close();
+
+            if (!this._dexcomClient) {
+                this._log('No Dexcom client available');
+                console.log('[Dexcom] No Dexcom client available');
+                Main.notifyError('Dexcom', 'Please configure your Dexcom Share credentials first');
+                return;
+            }
+
+           
+            this._log('Fetching historical data...');
+            console.log('[Dexcom] Fetching historical data...');
+
+            const readings = await this._dexcomClient.getHistoricalGlucose(1440, 288);
+
+            this._log('Retrieved readings:', readings.length);
+            console.log('[Dexcom] Retrieved readings:', readings.length);
+
+           
+            console.log('[Dexcom] Creating graph dialog...');
+            const dialog = new SimpleGraphDialog(this._settings, readings);
+
+            console.log('[Dexcom] Opening dialog...');
+            dialog.open();
+
+            console.log('[Dexcom] Dialog opened successfully');
+
+        } catch (error) {
+            this._log('Error showing graph:', error);
+            console.error('[Dexcom] Error showing graph:', error);
+            console.error('[Dexcom] Error stack:', error.stack);
+            Main.notifyError('Dexcom Graph', `Failed to load glucose data: ${error.message}\n\nCheck console for details (journalctl -f --user)`);
+        }
     }
 
     destroy() {
