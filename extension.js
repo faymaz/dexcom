@@ -18,6 +18,7 @@ class DexcomIndicator extends PanelMenu.Button {
         this._destroyed = false;
 
         this.path = null;
+        this._lastLoggedValue = null; // Track last logged value to avoid duplicate logs
 
         this._log = (message, data = null) => {
             if (this._settings.get_boolean('enable-debug-logs')) {
@@ -269,15 +270,34 @@ class DexcomIndicator extends PanelMenu.Button {
             let errorMessage = 'Error';
             let detailedMessage = error.message;
 
-
-            if (error.message.includes('423')) {
+            // Handle network/connection errors first (most common transient error)
+            if (error.message.includes('NETWORK_ERROR') ||
+                error.message.includes('Gio.IOErrorEnum') ||
+                error.message.includes('No route to host') ||
+                error.message.includes('timed out') ||
+                error.message.includes('Could not connect')) {
+                errorMessage = 'Network Error';
+                detailedMessage = 'Connection failed. Please check your internet connection.';
+            }
+            // Handle rate limiting (429)
+            else if (error.message.includes('RATE_LIMITED')) {
+                errorMessage = 'Rate Limited';
+                detailedMessage = 'Too many requests to Dexcom API. Please wait 5-10 minutes before the next update.';
+            }
+            // Handle session expiration
+            else if (error.message.includes('SESSION_EXPIRED') || error.message.includes('Session renewal failed')) {
+                errorMessage = 'Session Error';
+                detailedMessage = 'Session expired and renewal failed. Please verify your credentials in settings.';
+            }
+            // Handle API locked (423)
+            else if (error.message.includes('423')) {
                 errorMessage = 'API Locked';
                 detailedMessage = 'Dexcom API temporarily locked. This usually resolves automatically. Try refreshing or wait a few minutes.';
-            } else if (error.message.includes('AccountPasswordInvalid')) {
+            }
+            // Handle authentication errors
+            else if (error.message.includes('AccountPasswordInvalid')) {
                 errorMessage = 'Auth Error';
                 detailedMessage = 'Invalid username or password';
-
-
                 this._dexcomClient = null;
                 await this._updateCredentials();
             } else if (error.message.includes('AccountNotFound')) {
@@ -286,15 +306,7 @@ class DexcomIndicator extends PanelMenu.Button {
             } else if (error.message.includes('SSO_AuthenticatePasswordInvalid')) {
                 errorMessage = 'Auth Error';
                 detailedMessage = 'Invalid password';
-            } else if (error.message.includes('Session')) {
-
-                await this._updateReading();
-                return;
-            } else if (error.message.includes('network') || error.message.includes('timeout')) {
-                errorMessage = 'Network Error';
-                detailedMessage = 'Please check your internet connection';
             }
-
 
             this._updateDisplayError(errorMessage, detailedMessage);
         }
@@ -604,31 +616,31 @@ _updateDisplay(reading) {
     }
 
     _getBackgroundClass(value) {
-       
+
         const isMmol = this._settings.get_string('unit') === 'mmol/L';
         const numericValue = parseFloat(value);
-        
-       
+
+
         const thresholdsMgdl = {
             urgentHigh: this._settings.get_int('urgent-high-threshold'),
             high: this._settings.get_int('high-threshold'),
             low: this._settings.get_int('low-threshold'),
             urgentLow: this._settings.get_int('urgent-low-threshold')
         };
-        
-       
+
+
         const thresholds = {};
         if (isMmol) {
-           
+
             Object.keys(thresholdsMgdl).forEach(key => {
                 thresholds[key] = parseFloat((thresholdsMgdl[key] / 18.0).toFixed(1));
             });
         } else {
-           
+
             Object.assign(thresholds, thresholdsMgdl);
         }
-    
-       
+
+
         const colors = {
             urgentHigh: this._settings.get_string('urgent-high-color'),
             high: this._settings.get_string('high-color'),
@@ -636,21 +648,24 @@ _updateDisplay(reading) {
             low: this._settings.get_string('low-color'),
             urgentLow: this._settings.get_string('urgent-low-color')
         };
-    
-       
+
+
         const hexToRgba = (hex, alpha) => {
             const r = parseInt(hex.slice(1, 3), 16);
             const g = parseInt(hex.slice(3, 5), 16);
             const b = parseInt(hex.slice(5, 7), 16);
             return `rgba(${r}, ${g}, ${b}, ${alpha})`;
         };
-    
 
-        this._log('Color threshold check:', {
-            unit: isMmol ? 'mmol/L' : 'mg/dL',
-            value: numericValue,
-            thresholds: thresholds
-        });
+        // Only log when value changes
+        if (this._lastLoggedValue !== numericValue) {
+            this._log('Color threshold check:', {
+                unit: isMmol ? 'mmol/L' : 'mg/dL',
+                value: numericValue,
+                thresholds: thresholds
+            });
+            this._lastLoggedValue = numericValue;
+        }
     
        
         let styleClass = 'dexcom-value-container';
