@@ -3,7 +3,7 @@
     "system-monitor",
     "status-indicators"
   ],
-  "description": "A GNOME Shell extension that seamlessly integrates with Dexcom Share to display real-time blood glucose levels in the top panel. Features customizable urgent high/low thresholds, color schemes, and comprehensive glucose monitoring options.\n\nThis extension is not affiliated, funded, or in any way associated with Dexcom.",
+  "description": "A GNOME Shell extension that displays real-time blood glucose levels in the top panel. Supports both Dexcom Share and Nightscout as data sources. Features customizable urgent high/low thresholds, color schemes, trend arrows, delta values, and comprehensive glucose monitoring options.\n\nThis extension is not affiliated, funded, or in any way associated with Dexcom or Nightscout.",
   "donations": {
     "buymeacoffee": "fethiaymazb"
   },
@@ -20,5 +20,5 @@
   ],
   "url": "https://github.com/faymaz/dexcom",
   "uuid": "dexcom@faymaz.github.com",
-  "version": 15
+  "version": 16
 }

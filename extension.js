@@ -9,6 +9,7 @@ import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 import { DexcomClient } from './dexcomClient.js';
+import { NightscoutClient } from './nightscoutClient.js';
 
 const DexcomIndicator = GObject.registerClass(
 class DexcomIndicator extends PanelMenu.Button {
@@ -42,20 +43,14 @@ class DexcomIndicator extends PanelMenu.Button {
             style_class: 'dexcom-label'
         });
 
-       
+
         this.add_child(this.box);
         this.box.add_child(this.buttonText);
 
-       
-        this._dexcomClient = new DexcomClient(
-            this._settings.get_string('username'),
-            this._settings.get_string('password'),
-            this._settings.get_string('region'),
-            this._settings.get_string('unit'),
-            this._settings
-        );
 
-       
+        this._cgmClient = this._createClient();
+
+
         this._buildMenu();
        
         this._connectSignals();
@@ -65,9 +60,40 @@ class DexcomIndicator extends PanelMenu.Button {
     
     setPath(path) {
         this.path = path;
-       
+
         this._initIcon();
         this._updateIconVisibility();
+    }
+
+    _createClient() {
+        const dataSource = this._settings.get_string('data-source');
+        const unit = this._settings.get_string('unit');
+
+        this._log(`Creating client for data source: ${dataSource}`);
+
+        if (dataSource === 'nightscout') {
+            const url = this._settings.get_string('nightscout-url');
+            const apiSecret = this._settings.get_string('nightscout-api-secret');
+
+            if (!url) {
+                this._log('Nightscout URL not configured');
+                return null;
+            }
+
+            return new NightscoutClient(url, apiSecret, unit, this._settings);
+        } else {
+            // Default to Dexcom
+            const username = this._settings.get_string('username');
+            const password = this._settings.get_string('password');
+            const region = this._settings.get_string('region');
+
+            if (!username || !password) {
+                this._log('Dexcom credentials not configured');
+                return null;
+            }
+
+            return new DexcomClient(username, password, region, unit, this._settings);
+        }
     }
 
     _loadIcon() {
@@ -107,21 +133,21 @@ class DexcomIndicator extends PanelMenu.Button {
         }
     }
 
-    _connectSignals() {        
-       
+    _connectSignals() {
+
         const updateDisplaySettings = () => {
             if (this._currentReading) {
                 this._updateDisplay(this._currentReading);
             }
         };
-    
-       
+
+
         this._settings.connect('changed::show-icon', updateDisplaySettings);
         this._settings.connect('changed::show-trend-arrows', updateDisplaySettings);
         this._settings.connect('changed::show-delta', updateDisplaySettings);
         this._settings.connect('changed::show-elapsed-time', updateDisplaySettings);
-        
-       
+
+        // Dexcom settings
         this._settings.connect('changed::username', () => {
             this._updateCredentials();
             this._updateReading();
@@ -134,39 +160,59 @@ class DexcomIndicator extends PanelMenu.Button {
             this._updateCredentials();
             this._updateReading();
         });
+
+        // Nightscout settings
+        this._settings.connect('changed::nightscout-url', () => {
+            this._updateCredentials();
+            this._updateReading();
+        });
+        this._settings.connect('changed::nightscout-api-secret', () => {
+            this._updateCredentials();
+            this._updateReading();
+        });
+
+        // Data source change
+        this._settings.connect('changed::data-source', () => {
+            this._updateCredentials();
+            this._updateReading();
+        });
+
         this._settings.connect('changed::unit', () => {
             this._updateUnit();
             this._updateReading();
         });
-       
+
         this._settings.connect('changed::icon-position', () => {
             this._updateIconVisibility();
         });
 
-       
+
         this._settings.connect('changed::show-icon', () => {
             this._updateIconVisibility();
         });
     }
 
     _updateCredentials() {
-        const username = this._settings.get_string('username');
-        const password = this._settings.get_string('password');
-        const region = this._settings.get_string('region');
-        const unit = this._settings.get_string('unit');
-    
-        if (!username || !password) {
-            this._log('Username or password not set');
-            this._updateDisplayError('Auth Error', 'Please enter your Dexcom Share credentials');
-            return;
+        const dataSource = this._settings.get_string('data-source');
+
+        if (dataSource === 'nightscout') {
+            const url = this._settings.get_string('nightscout-url');
+            if (!url) {
+                this._log('Nightscout URL not set');
+                this._updateDisplayError('Setup Required', 'Please enter your Nightscout URL');
+                return;
+            }
+        } else {
+            const username = this._settings.get_string('username');
+            const password = this._settings.get_string('password');
+            if (!username || !password) {
+                this._log('Username or password not set');
+                this._updateDisplayError('Auth Error', 'Please enter your Dexcom Share credentials');
+                return;
+            }
         }
-    
-        this._dexcomClient = new DexcomClient(
-            username,
-            password,
-            region,
-            unit
-        );
+
+        this._cgmClient = this._createClient();
     }
 
    
@@ -184,37 +230,30 @@ class DexcomIndicator extends PanelMenu.Button {
     }
 
     _updateUnit() {
-       
-        this._dexcomClient = new DexcomClient(
-            this._settings.get_string('username'),
-            this._settings.get_string('password'),
-            this._settings.get_string('region'),
-            this._settings.get_string('unit'),
-            this._settings
-        );
-    
+        // Recreate client with new unit
+        this._cgmClient = this._createClient();
 
         if (this._currentReading) {
-            const value = this._settings.get_string('unit') === 'mmol/L' 
-                ? (this._currentReading.value / 18.0).toFixed(1) 
+            const value = this._settings.get_string('unit') === 'mmol/L'
+                ? (this._currentReading.value / 18.0).toFixed(1)
                 : this._currentReading.value;
-            
+
             const delta = this._settings.get_string('unit') === 'mmol/L'
                 ? (this._currentReading.delta / 18.0).toFixed(1)
                 : this._currentReading.delta;
-    
+
             const updatedReading = {
                 ...this._currentReading,
                 value: value,
                 delta: delta,
                 unit: this._settings.get_string('unit')
             };
-    
+
             this._updateDisplay(updatedReading);
             this._updateMenuInfo(updatedReading);
         }
-    
-       
+
+        // Fetch new reading with updated unit
         this._updateReading();
     }
     
@@ -236,19 +275,24 @@ class DexcomIndicator extends PanelMenu.Button {
 
 
     async _updateReading() {
-      
+
         if (this._destroyed) {
             return;
         }
 
-        if (!this._dexcomClient) {
-            this._updateDisplayError('Setup Required', 'Please configure your Dexcom Share credentials');
+        if (!this._cgmClient) {
+            const dataSource = this._settings.get_string('data-source');
+            if (dataSource === 'nightscout') {
+                this._updateDisplayError('Setup Required', 'Please configure your Nightscout settings');
+            } else {
+                this._updateDisplayError('Setup Required', 'Please configure your Dexcom Share credentials');
+            }
             return;
         }
 
         try {
 
-            const reading = await this._dexcomClient.getLatestGlucose();
+            const reading = await this._cgmClient.getLatestGlucose();
 
           
             if (this._destroyed) {
@@ -265,10 +309,11 @@ class DexcomIndicator extends PanelMenu.Button {
             this._updateDisplay(reading);
             this._updateMenuInfo(reading);
         } catch (error) {
-            this._log('Error fetching Dexcom reading:', error);
+            this._log('Error fetching CGM reading:', error);
 
             let errorMessage = 'Error';
             let detailedMessage = error.message;
+            const dataSource = this._settings.get_string('data-source');
 
             // Handle network/connection errors first (most common transient error)
             if (error.message.includes('NETWORK_ERROR') ||
@@ -282,9 +327,21 @@ class DexcomIndicator extends PanelMenu.Button {
             // Handle rate limiting (429)
             else if (error.message.includes('RATE_LIMITED')) {
                 errorMessage = 'Rate Limited';
-                detailedMessage = 'Too many requests to Dexcom API. Please wait 5-10 minutes before the next update.';
+                detailedMessage = dataSource === 'nightscout'
+                    ? 'Too many requests to Nightscout. Please wait a few minutes.'
+                    : 'Too many requests to Dexcom API. Please wait 5-10 minutes before the next update.';
             }
-            // Handle session expiration
+            // Handle Nightscout unauthorized
+            else if (error.message.includes('UNAUTHORIZED')) {
+                errorMessage = 'Auth Error';
+                detailedMessage = 'Invalid API secret. Please check your Nightscout API secret.';
+            }
+            // Handle Nightscout not found
+            else if (error.message.includes('NOT_FOUND')) {
+                errorMessage = 'Not Found';
+                detailedMessage = 'Nightscout URL not found. Please check your Nightscout URL.';
+            }
+            // Handle session expiration (Dexcom)
             else if (error.message.includes('SESSION_EXPIRED') || error.message.includes('Session renewal failed')) {
                 errorMessage = 'Session Error';
                 detailedMessage = 'Session expired and renewal failed. Please verify your credentials in settings.';
@@ -292,13 +349,13 @@ class DexcomIndicator extends PanelMenu.Button {
             // Handle API locked (423)
             else if (error.message.includes('423')) {
                 errorMessage = 'API Locked';
-                detailedMessage = 'Dexcom API temporarily locked. This usually resolves automatically. Try refreshing or wait a few minutes.';
+                detailedMessage = 'API temporarily locked. This usually resolves automatically. Try refreshing or wait a few minutes.';
             }
-            // Handle authentication errors
+            // Handle Dexcom authentication errors
             else if (error.message.includes('AccountPasswordInvalid')) {
                 errorMessage = 'Auth Error';
                 detailedMessage = 'Invalid username or password';
-                this._dexcomClient = null;
+                this._cgmClient = null;
                 await this._updateCredentials();
             } else if (error.message.includes('AccountNotFound')) {
                 errorMessage = 'Auth Error';
@@ -306,6 +363,11 @@ class DexcomIndicator extends PanelMenu.Button {
             } else if (error.message.includes('SSO_AuthenticatePasswordInvalid')) {
                 errorMessage = 'Auth Error';
                 detailedMessage = 'Invalid password';
+            }
+            // Handle Nightscout URL not configured
+            else if (error.message.includes('Nightscout URL is not configured')) {
+                errorMessage = 'Setup Required';
+                detailedMessage = 'Please enter your Nightscout URL in settings.';
             }
 
             this._updateDisplayError(errorMessage, detailedMessage);
@@ -759,21 +821,21 @@ _updateDisplay(reading) {
     }
 
     destroy() {
-      
+
         this._destroyed = true;
 
-      
+
         if (this._timeout) {
             clearInterval(this._timeout);
             this._timeout = null;
         }
 
-      
-        if (this._dexcomClient) {
-            this._dexcomClient = null;
+
+        if (this._cgmClient) {
+            this._cgmClient = null;
         }
 
-      
+
         super.destroy();
     }
 });

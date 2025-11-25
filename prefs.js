@@ -43,12 +43,36 @@ export default class DexcomPreferences extends ExtensionPreferences {
     }
 
     _addAccountGroup(page, settings) {
-        const group = new Adw.PreferencesGroup({
+        // Data Source Selection Group
+        const sourceGroup = new Adw.PreferencesGroup({
+            title: 'Data Source',
+            description: 'Select your CGM data source',
+        });
+
+        const sourceRow = new Adw.ActionRow({ title: 'Data Source' });
+        const sourceCombo = new Gtk.ComboBoxText({
+            valign: Gtk.Align.CENTER,
+        });
+
+        sourceCombo.append('dexcom', 'Dexcom Share');
+        sourceCombo.append('nightscout', 'Nightscout');
+
+        sourceCombo.set_active_id(settings.get_string('data-source'));
+        sourceCombo.connect('changed', () => {
+            settings.set_string('data-source', sourceCombo.get_active_id());
+            this._updateSourceVisibility(settings);
+        });
+
+        sourceRow.add_suffix(sourceCombo);
+        sourceGroup.add(sourceRow);
+        page.add(sourceGroup);
+
+        // Dexcom Share Account Group
+        this._dexcomGroup = new Adw.PreferencesGroup({
             title: 'Dexcom Share Account',
             description: 'Enter your Dexcom Share credentials',
         });
 
-       
         const usernameRow = new Adw.EntryRow({
             title: 'Username',
         });
@@ -56,9 +80,8 @@ export default class DexcomPreferences extends ExtensionPreferences {
             settings.set_string('username', usernameRow.get_text());
         });
         usernameRow.set_text(settings.get_string('username'));
-        group.add(usernameRow);
+        this._dexcomGroup.add(usernameRow);
 
-       
         const passwordRow = new Adw.PasswordEntryRow({
             title: 'Password',
         });
@@ -66,9 +89,8 @@ export default class DexcomPreferences extends ExtensionPreferences {
             settings.set_string('password', passwordRow.get_text());
         });
         passwordRow.set_text(settings.get_string('password'));
-        group.add(passwordRow);
+        this._dexcomGroup.add(passwordRow);
 
-       
         const regionRow = new Adw.ActionRow({ title: 'Region' });
         const regionCombo = new Gtk.ComboBoxText({
             valign: Gtk.Align.CENTER,
@@ -76,16 +98,49 @@ export default class DexcomPreferences extends ExtensionPreferences {
 
         regionCombo.append('US', 'United States');
         regionCombo.append('Non-US', 'Outside US');
-        
+
         regionCombo.set_active_id(settings.get_string('region'));
         regionCombo.connect('changed', () => {
             settings.set_string('region', regionCombo.get_active_id());
         });
 
         regionRow.add_suffix(regionCombo);
-        group.add(regionRow);
+        this._dexcomGroup.add(regionRow);
 
-       
+        page.add(this._dexcomGroup);
+
+        // Nightscout Settings Group
+        this._nightscoutGroup = new Adw.PreferencesGroup({
+            title: 'Nightscout Settings',
+            description: 'Enter your Nightscout server details',
+        });
+
+        const urlRow = new Adw.EntryRow({
+            title: 'Nightscout URL',
+        });
+        urlRow.connect('changed', () => {
+            settings.set_string('nightscout-url', urlRow.get_text());
+        });
+        urlRow.set_text(settings.get_string('nightscout-url'));
+        this._nightscoutGroup.add(urlRow);
+
+        const apiSecretRow = new Adw.PasswordEntryRow({
+            title: 'API Secret',
+        });
+        apiSecretRow.connect('changed', () => {
+            settings.set_string('nightscout-api-secret', apiSecretRow.get_text());
+        });
+        apiSecretRow.set_text(settings.get_string('nightscout-api-secret'));
+        this._nightscoutGroup.add(apiSecretRow);
+
+        page.add(this._nightscoutGroup);
+
+        // Common Settings Group
+        const commonGroup = new Adw.PreferencesGroup({
+            title: 'Common Settings',
+            description: 'General glucose monitoring settings',
+        });
+
         const unitRow = new Adw.ActionRow({ title: 'Glucose Unit' });
         const unitCombo = new Gtk.ComboBoxText({
             valign: Gtk.Align.CENTER,
@@ -93,20 +148,35 @@ export default class DexcomPreferences extends ExtensionPreferences {
 
         unitCombo.append('mg/dL', 'mg/dL');
         unitCombo.append('mmol/L', 'mmol/L');
-        
+
         unitCombo.set_active_id(settings.get_string('unit'));
         unitCombo.connect('changed', () => {
             settings.set_string('unit', unitCombo.get_active_id());
         });
 
         unitRow.add_suffix(unitCombo);
-        group.add(unitRow);
+        commonGroup.add(unitRow);
 
-       
-        this._addSpinButton(group, settings, 'update-interval',
+        this._addSpinButton(commonGroup, settings, 'update-interval',
             'Update Interval (seconds)', 60, 600, 30);
 
-        page.add(group);
+        page.add(commonGroup);
+
+        // Store page reference and update visibility
+        this._accountPage = page;
+        this._settings = settings;
+        this._updateSourceVisibility(settings);
+    }
+
+    _updateSourceVisibility(settings) {
+        const source = settings.get_string('data-source');
+
+        if (this._dexcomGroup) {
+            this._dexcomGroup.visible = (source === 'dexcom');
+        }
+        if (this._nightscoutGroup) {
+            this._nightscoutGroup.visible = (source === 'nightscout');
+        }
     }
 
     _addThresholdGroup(page, settings) {

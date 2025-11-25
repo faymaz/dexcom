@@ -1,6 +1,13 @@
 <schemalist>
     <schema id="org.gnome.shell.extensions.dexcom" path="/org/gnome/shell/extensions/dexcom/">
-        <!-- Credentials -->
+        <!-- Data Source Selection -->
+        <key name="data-source" type="s">
+            <default>"dexcom"</default>
+            <summary>Data Source</summary>
+            <description>CGM data source (dexcom or nightscout)</description>
+        </key>
+
+        <!-- Dexcom Credentials -->
         <key name="username" type="s">
             <default>""</default>
             <summary>Dexcom Username</summary>
@@ -15,6 +22,18 @@
             <default>"OUS"</default>
             <summary>Dexcom Region</summary>
             <description>Dexcom Share server region (US or Non-US)</description>
+        </key>
+
+        <!-- Nightscout Settings -->
+        <key name="nightscout-url" type="s">
+            <default>""</default>
+            <summary>Nightscout URL</summary>
+            <description>Your Nightscout site URL (e.g., https://your-site.herokuapp.com)</description>
+        </key>
+        <key name="nightscout-api-secret" type="s">
+            <default>""</default>
+            <summary>Nightscout API Secret</summary>
+            <description>Your Nightscout API secret (minimum 12 characters)</description>
         </key>
 
         <!-- Units and Update Settings -->
