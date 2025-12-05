@@ -35,6 +35,11 @@
             <summary>Nightscout API Secret</summary>
             <description>Your Nightscout API secret (minimum 12 characters)</description>
         </key>
+        <key name="nightscout-ignore-tls" type="b">
+            <default>false</default>
+            <summary>Ignore TLS Certificate Errors</summary>
+            <description>Disable SSL certificate validation (useful for self-signed certificates on local Nightscout instances)</description>
+        </key>
 
         <!-- Units and Update Settings -->
         <key name="unit" type="s">

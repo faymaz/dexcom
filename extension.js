@@ -69,8 +69,18 @@ class DexcomIndicator extends PanelMenu.Button {
         const dataSource = this._settings.get_string('data-source');
         const unit = this._settings.get_string('unit');
 
+        // Check if we can reuse the existing client
+        if (this._cgmClient && this._lastClientConfig) {
+            const currentConfig = this._getClientConfig();
+            if (this._configsMatch(this._lastClientConfig, currentConfig)) {
+                this._log('Reusing existing client (config unchanged)');
+                return this._cgmClient;
+            }
+        }
+
         this._log(`Creating client for data source: ${dataSource}`);
 
+        let client = null;
         if (dataSource === 'nightscout') {
             const url = this._settings.get_string('nightscout-url');
             const apiSecret = this._settings.get_string('nightscout-api-secret');
@@ -80,7 +90,7 @@ class DexcomIndicator extends PanelMenu.Button {
                 return null;
             }
 
-            return new NightscoutClient(url, apiSecret, unit, this._settings);
+            client = new NightscoutClient(url, apiSecret, unit, this._settings);
         } else {
             // Default to Dexcom
             const username = this._settings.get_string('username');
@@ -92,8 +102,44 @@ class DexcomIndicator extends PanelMenu.Button {
                 return null;
             }
 
-            return new DexcomClient(username, password, region, unit, this._settings);
+            client = new DexcomClient(username, password, region, unit, this._settings);
         }
+
+        // Store the current config
+        this._lastClientConfig = this._getClientConfig();
+        return client;
+    }
+
+    _getClientConfig() {
+        const dataSource = this._settings.get_string('data-source');
+        const unit = this._settings.get_string('unit');
+
+        if (dataSource === 'nightscout') {
+            return {
+                dataSource,
+                unit,
+                url: this._settings.get_string('nightscout-url'),
+                apiSecret: this._settings.get_string('nightscout-api-secret'),
+                ignoreTls: this._settings.get_boolean('nightscout-ignore-tls')
+            };
+        } else {
+            return {
+                dataSource,
+                unit,
+                username: this._settings.get_string('username'),
+                password: this._settings.get_string('password'),
+                region: this._settings.get_string('region')
+            };
+        }
+    }
+
+    _configsMatch(config1, config2) {
+        if (!config1 || !config2) return false;
+
+        const keys = Object.keys(config1);
+        if (keys.length !== Object.keys(config2).length) return false;
+
+        return keys.every(key => config1[key] === config2[key]);
     }
 
     _loadIcon() {
@@ -167,6 +213,10 @@ class DexcomIndicator extends PanelMenu.Button {
             this._updateReading();
         });
         this._settings.connect('changed::nightscout-api-secret', () => {
+            this._updateCredentials();
+            this._updateReading();
+        });
+        this._settings.connect('changed::nightscout-ignore-tls', () => {
             this._updateCredentials();
             this._updateReading();
         });
@@ -315,8 +365,16 @@ class DexcomIndicator extends PanelMenu.Button {
             let detailedMessage = error.message;
             const dataSource = this._settings.get_string('data-source');
 
+            // Handle TLS certificate errors
+            if (error.message.includes('TLS_ERROR') ||
+                error.message.includes('Gio.TlsError') ||
+                error.message.includes('TLS') ||
+                error.message.includes('certificate')) {
+                errorMessage = 'TLS Error';
+                detailedMessage = 'SSL certificate error. For local Nightscout, enable "Ignore TLS Errors" in settings.';
+            }
             // Handle network/connection errors first (most common transient error)
-            if (error.message.includes('NETWORK_ERROR') ||
+            else if (error.message.includes('NETWORK_ERROR') ||
                 error.message.includes('Gio.IOErrorEnum') ||
                 error.message.includes('No route to host') ||
                 error.message.includes('timed out') ||

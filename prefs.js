@@ -133,6 +133,18 @@ export default class DexcomPreferences extends ExtensionPreferences {
         apiSecretRow.set_text(settings.get_string('nightscout-api-secret'));
         this._nightscoutGroup.add(apiSecretRow);
 
+        const tlsRow = new Adw.ActionRow({
+            title: 'Ignore TLS Errors',
+            subtitle: 'Enable for self-signed certificates (local Nightscout)',
+        });
+        const tlsSwitch = new Gtk.Switch({
+            active: settings.get_boolean('nightscout-ignore-tls'),
+            valign: Gtk.Align.CENTER,
+        });
+        settings.bind('nightscout-ignore-tls', tlsSwitch, 'active', Gio.SettingsBindFlags.DEFAULT);
+        tlsRow.add_suffix(tlsSwitch);
+        this._nightscoutGroup.add(tlsRow);
+
         page.add(this._nightscoutGroup);
 
         // Common Settings Group

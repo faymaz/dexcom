@@ -27,6 +27,13 @@ export class NightscoutClient {
         this._session = new Soup.Session();
         this._session.timeout = 30;
 
+        // Disable TLS certificate validation for self-signed certificates
+        // This is useful for local Nightscout instances
+        if (this._settings && this._settings.get_boolean('nightscout-ignore-tls')) {
+            this._session.ssl_strict = false;
+            this._log('TLS certificate validation disabled');
+        }
+
         // Store previous reading for delta calculation
         this._previousReading = null;
         this._previousDelta = null;
@@ -90,8 +97,15 @@ export class NightscoutClient {
         } catch (error) {
             this._log('Request failed:', error);
 
-            // Handle network/connection errors
+            // Handle TLS certificate errors
             const errorString = error.toString();
+            if (errorString.includes('Gio.TlsError') ||
+                errorString.includes('TLS') ||
+                errorString.includes('certificate')) {
+                throw new Error('TLS_ERROR: Invalid or self-signed SSL certificate. If using a local Nightscout instance, enable "Ignore TLS Errors" in settings.');
+            }
+
+            // Handle network/connection errors
             if (errorString.includes('Gio.IOErrorEnum') ||
                 errorString.includes('No route to host') ||
                 errorString.includes('timed out') ||
