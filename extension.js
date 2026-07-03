@@ -106,46 +106,44 @@ class DexcomIndicator extends PanelMenu.Button {
         }
     }
 
-    _connectSignals() {        
-       
+    _connectSignals() {
+
         const updateDisplaySettings = () => {
             if (this._currentReading) {
                 this._updateDisplay(this._currentReading);
             }
         };
-    
-       
-        this._settings.connect('changed::show-icon', updateDisplaySettings);
-        this._settings.connect('changed::show-trend-arrows', updateDisplaySettings);
-        this._settings.connect('changed::show-delta', updateDisplaySettings);
-        this._settings.connect('changed::show-elapsed-time', updateDisplaySettings);
-        
-       
-        this._settings.connect('changed::username', () => {
-            this._updateCredentials();
-            this._updateReading();
-        });
-        this._settings.connect('changed::password', () => {
-            this._updateCredentials();
-            this._updateReading();
-        });
-        this._settings.connect('changed::region', () => {
-            this._updateCredentials();
-            this._updateReading();
-        });
-        this._settings.connect('changed::unit', () => {
-            this._updateUnit();
-            this._updateReading();
-        });
-       
-        this._settings.connect('changed::icon-position', () => {
-            this._updateIconVisibility();
-        });
 
-       
-        this._settings.connect('changed::show-icon', () => {
-            this._updateIconVisibility();
-        });
+
+        this._settings.connectObject(
+            'changed::show-icon', updateDisplaySettings,
+            'changed::show-trend-arrows', updateDisplaySettings,
+            'changed::show-delta', updateDisplaySettings,
+            'changed::show-elapsed-time', updateDisplaySettings,
+            'changed::username', () => {
+                this._updateCredentials();
+                this._updateReading();
+            },
+            'changed::password', () => {
+                this._updateCredentials();
+                this._updateReading();
+            },
+            'changed::region', () => {
+                this._updateCredentials();
+                this._updateReading();
+            },
+            'changed::unit', () => {
+                this._updateUnit();
+                this._updateReading();
+            },
+            'changed::icon-position', () => {
+                this._updateIconVisibility();
+            },
+            'changed::show-icon', () => {
+                this._updateIconVisibility();
+            },
+            this
+        );
     }
 
     _updateCredentials() {
@@ -174,11 +172,11 @@ class DexcomIndicator extends PanelMenu.Button {
             label, 
             this._settings.get_boolean(settingKey)
         );
-        toggleItem.connect('toggled', (item) => {
+        toggleItem.connectObject('toggled', (item) => {
             this._settings.set_boolean(settingKey, item.state);
-           
+
             this._updateReading();
-        });
+        }, this);
         this.menu.addMenuItem(toggleItem);
     }
 
@@ -548,12 +546,12 @@ _updateDisplay(reading) {
         const refreshButton = new PopupMenu.PopupMenuItem('Refresh Now', {
             style_class: 'dexcom-refresh-button'
         });
-        refreshButton.connect('activate', () => {
-           
+        refreshButton.connectObject('activate', () => {
+
             this.glucoseInfo.label.text = 'Refreshing...';
-           
+
             this._updateReading();
-        });
+        }, this);
         this.menu.addMenuItem(refreshButton);
     
        
@@ -563,11 +561,11 @@ _updateDisplay(reading) {
         const settingsButton = new PopupMenu.PopupMenuItem('Open Settings', {
             style_class: 'dexcom-settings-button'
         });
-        settingsButton.connect('activate', () => {
+        settingsButton.connectObject('activate', () => {
             if (this.extension) {
                 this.extension.openPreferences();
             }
-        });
+        }, this);
         this.menu.addMenuItem(settingsButton);
     }
 
@@ -715,13 +713,18 @@ _updateDisplay(reading) {
       
         this._destroyed = true;
 
-      
+
         if (this._timeout) {
             clearInterval(this._timeout);
             this._timeout = null;
         }
 
-      
+
+        if (this._settings) {
+            this._settings.disconnectObject(this);
+        }
+
+
         if (this._dexcomClient) {
             this._dexcomClient = null;
         }
