@@ -89,13 +89,13 @@ export class DexcomClient {
                 uri: GLib.Uri.parse(url, GLib.UriFlags.NONE)
             });
 
-
+           
             const headers = message.get_request_headers();
             headers.append('Content-Type', 'application/json; charset=utf-8');
             headers.append('Accept', 'application/json');
             headers.append('User-Agent', this._agent);
 
-
+           
             if (data && method !== 'GET') {
                 const jsonStr = JSON.stringify(data);
                 const bytes = new TextEncoder().encode(jsonStr);
@@ -105,16 +105,13 @@ export class DexcomClient {
                 this._log('GET request - no body required');
             }
 
-            const response = await this._session.send_and_read_async(message,
+            const response = await this._session.send_and_read_async(message, 
                 GLib.PRIORITY_DEFAULT, null);
-
-            // Get status code as number to avoid enum errors with non-standard codes
-            const statusCode = message.status_code;
+            
+            const status = message.get_status();
             const responseText = new TextDecoder().decode(response.get_data());
-
-            this._log(`Response status: ${statusCode}`);
-
-            if (statusCode === 200) {
+            
+            if (status === 200) {
                 try {
                     return JSON.parse(responseText);
                 } catch {
@@ -122,37 +119,11 @@ export class DexcomClient {
                 }
             }
 
-            // Handle specific error codes
-            if (statusCode === 429) {
-                throw new Error('RATE_LIMITED: Too many requests. Please wait a few minutes before trying again.');
-            }
-
-            if (statusCode === 500 || statusCode === 401) {
-                // Parse error response for session/auth errors
-                try {
-                    const errorData = JSON.parse(responseText);
-                    if (errorData.Code === 'SessionNotValid' || errorData.Code === 'SessionIdNotFound') {
-                        throw new Error('SESSION_EXPIRED: ' + responseText);
-                    }
-                } catch (parseError) {
-                    // If not JSON, fall through to generic error
-                }
-            }
-
-            throw new Error(`Request failed with status ${statusCode}: ${responseText}`);
+           
+            throw new Error(`Request failed with status ${status}: ${responseText}`);
 
         } catch (error) {
             this._log('Request failed:', error);
-
-            // Handle network/connection errors from Gio
-            const errorString = error.toString();
-            if (errorString.includes('Gio.IOErrorEnum') ||
-                errorString.includes('No route to host') ||
-                errorString.includes('timed out') ||
-                errorString.includes('Could not connect')) {
-                throw new Error('NETWORK_ERROR: Connection failed. Please check your internet connection.');
-            }
-
             throw error;
         }
     }
@@ -223,9 +194,7 @@ async authenticate() {
 }
 
 
-    async getLatestGlucose(retryCount = 0) {
-        const MAX_RETRIES = 1; // Only retry once to avoid infinite loops
-
+    async getLatestGlucose() {
         try {
             if (!this._sessionId) {
                 this._log('[DEBUG] No session ID, authenticating...');
@@ -257,20 +226,11 @@ async authenticate() {
         } catch (error) {
             this._log('[DEBUG] Error in getLatestGlucose:', error.message);
 
-            // Handle session expiration with retry limit
-            if (error.message.includes('SESSION_EXPIRED') || error.message.includes('SessionIdNotFound') || error.message.includes('SessionNotValid')) {
-                if (retryCount < MAX_RETRIES) {
-                    this._log('[DEBUG] Session expired, re-authenticating... (attempt ' + (retryCount + 1) + '/' + MAX_RETRIES + ')');
-                    this._sessionId = null;
-                    this._accountId = null;
-                    return this.getLatestGlucose(retryCount + 1);
-                } else {
-                    this._log('[DEBUG] Max retry attempts reached for session renewal');
-                    throw new Error('Session renewal failed after ' + MAX_RETRIES + ' attempts. Please check your credentials.');
-                }
+            if (error.message.includes('SessionIdNotFound')) {
+                this._log('[DEBUG] Session expired, re-authenticating...');
+                this._sessionId = null;
+                return this.getLatestGlucose();
             }
-
-            // Re-throw rate limiting and other errors
             throw error;
         }
     }
